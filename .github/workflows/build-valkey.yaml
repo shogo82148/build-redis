@@ -42,7 +42,7 @@ jobs:
           persist-credentials: "false"
       - id: create-releases
         run: |
-          gh release create "valkey-$VALKEY_VERSION-$SUFFIX" --draft --title "Valkey $VALKEY_VERSION" --notes "Valkey $VALKEY_VERSION built by shogo82148/build-valkey"
+          gh release create "valkey-$VALKEY_VERSION-$SUFFIX" --draft --title "Valkey $VALKEY_VERSION" --notes "Valkey $VALKEY_VERSION built by shogo82148/build-redis"
         env:
           VALKEY_VERSION: ${{ matrix.valkey }}
           SUFFIX: ${{ needs.list.outputs.suffix }}
@@ -61,7 +61,7 @@ jobs:
           persist-credentials: "false"
       - name: build
         shell: bash
-        run: ./build-valkey-with-openssl3.sh "$VALKEY_VERSION"
+        run: ./build-valkey.sh "$VALKEY_VERSION"
         env:
           VALKEY_VERSION: ${{ matrix.valkey }}
 
