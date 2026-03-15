@@ -1,0 +1,104 @@
+name: "build Valkey"
+
+on:
+  workflow_dispatch:
+    inputs:
+      valkey-versions:
+        description: Valkey versions to build (JSON Array)
+        required: true
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    steps:
+      - id: set-matrix
+        run: |
+          {
+            echo "suffix=$(date +%Y%m%d%H%M%S)"
+            echo "matrix-releases=$(printenv VALKEY_VERSIONS | jq -c '{valkey: .}')"
+            echo "matrix=$(printenv VALKEY_VERSIONS | jq -c '{valkey: . , os: ["ubuntu-22.04", "ubuntu-22.04-arm", "macos-14", "macos-15-intel"]}')"
+          } >> "$GITHUB_OUTPUT"
+        env:
+          VALKEY_VERSIONS: ${{ github.event.inputs.valkey-versions }}
+    outputs:
+      suffix: ${{ steps.set-matrix.outputs.suffix }}
+      matrix-releases: ${{ steps.set-matrix.outputs.matrix-releases }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+
+  create-releases:
+    needs: list
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.list.outputs.matrix-releases) }}
+    steps:
+      - id: create-releases
+        run: |
+          gh release create "valkey-$VALKEY_VERSION-$SUFFIX" --draft --title "Valkey $VALKEY_VERSION" --notes "Valkey $VALKEY_VERSION built by shogo82148/build-valkey"
+        env:
+          VALKEY_VERSIONS: ${{ matrix.valkey }}
+          SUFFIX: ${{ needs.list.outputs.suffix }}
+          GH_TOKEN: ${{ github.token }}
+
+  build:
+    needs: [list, create-releases]
+    timeout-minutes: 20
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.list.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: "false"
+      - name: build
+        shell: bash
+        run: ./build-valkey-with-openssl3.sh "$VALKEY_VERSION"
+        env:
+          VALKEY_VERSION: ${{ matrix.valkey }}
+
+      - name: upload
+        run: |
+          VALKEY_OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+          case "$(uname -m)" in
+              "x86_64")
+                  VALKEY_ARCH="x64"
+                  ;;
+              "arm64" | "aarch64")
+                  VALKEY_ARCH="arm64"
+                  ;;
+              *)
+                  echo "unsupported architecture: $(uname -m)"
+                  exit 1
+                  ;;
+          esac
+          mv "$RUNNER_TEMP/valkey-bin.tar.zstd" "$RUNNER_TEMP/valkey-$VALKEY_VERSION-$VALKEY_OS-$VALKEY_ARCH.tar.zstd"
+          gh release upload "valkey-$VALKEY_VERSION-$SUFFIX" "$RUNNER_TEMP/valkey-$VALKEY_VERSION-$VALKEY_OS-$VALKEY_ARCH.tar.zstd"
+        env:
+          VALKEY_VERSION: ${{ matrix.valkey }}
+          SUFFIX: ${{ needs.list.outputs.suffix }}
+          GH_TOKEN: ${{ github.token }}
+      - uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        with:
+          subject-path: ${{ runner.temp }}/*.tar.zstd
+
+  publish-releases:
+    needs: [list, build]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.list.outputs.matrix-releases) }}
+    timeout-minutes: 5
+    steps:
+      - id: publish-releases
+        run: |
+          gh release edit "valkey-$VALKEY_VERSION-$SUFFIX" --draft=false
+        env:
+          VALKEY_VERSION: ${{ matrix.valkey }}
+          SUFFIX: ${{ needs.list.outputs.suffix }}
+          GH_TOKEN: ${{ github.token }}

@@ -1,0 +1,104 @@
+name: "build Redis"
+
+on:
+  workflow_dispatch:
+    inputs:
+      redis-versions:
+        description: Redis versions to build (JSON Array)
+        required: true
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    steps:
+      - id: set-matrix
+        run: |
+          {
+            echo "suffix=$(date +%Y%m%d%H%M%S)"
+            echo "matrix-releases=$(printenv REDIS_VERSIONS | jq -c '{redis: .}')"
+            echo "matrix=$(printenv REDIS_VERSIONS | jq -c '{redis: . , os: ["ubuntu-22.04", "ubuntu-22.04-arm", "macos-14", "macos-15-intel"]}')"
+          } >> "$GITHUB_OUTPUT"
+        env:
+          REDIS_VERSIONS: ${{ github.event.inputs.redis-versions }}
+    outputs:
+      suffix: ${{ steps.set-matrix.outputs.suffix }}
+      matrix-releases: ${{ steps.set-matrix.outputs.matrix-releases }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+
+  create-releases:
+    needs: list
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.list.outputs.matrix-releases) }}
+    steps:
+      - id: create-releases
+        run: |
+          gh release create "redis-$REDIS_VERSION-$SUFFIX" --draft --title "Redis $REDIS_VERSION" --notes "Redis $REDIS_VERSION built by shogo82148/build-redis"
+        env:
+          REDIS_VERSIONS: ${{ matrix.redis }}
+          SUFFIX: ${{ needs.list.outputs.suffix }}
+          GH_TOKEN: ${{ github.token }}
+
+  build:
+    needs: [list, create-releases]
+    timeout-minutes: 20
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.list.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: "false"
+      - name: build
+        shell: bash
+        run: ./build-redis.sh "$REDIS_VERSION"
+        env:
+          REDIS_VERSION: ${{ matrix.redis }}
+
+      - name: upload
+        run: |
+          REDIS_OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+          case "$(uname -m)" in
+              "x86_64")
+                  REDIS_ARCH="x64"
+                  ;;
+              "arm64" | "aarch64")
+                  REDIS_ARCH="arm64"
+                  ;;
+              *)
+                  echo "unsupported architecture: $(uname -m)"
+                  exit 1
+                  ;;
+          esac
+          mv "$RUNNER_TEMP/redis-bin.tar.zstd" "$RUNNER_TEMP/redis-$REDIS_VERSION-$REDIS_OS-$REDIS_ARCH.tar.zstd"
+          gh release upload "redis-$REDIS_VERSION-$SUFFIX" "$RUNNER_TEMP/redis-$REDIS_VERSION-$REDIS_OS-$REDIS_ARCH.tar.zstd"
+        env:
+          REDIS_VERSION: ${{ matrix.redis }}
+          SUFFIX: ${{ needs.list.outputs.suffix }}
+          GH_TOKEN: ${{ github.token }}
+      - uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        with:
+          subject-path: ${{ runner.temp }}/*.tar.zstd
+
+  publish-releases:
+    needs: [list, build]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.list.outputs.matrix-releases) }}
+    timeout-minutes: 5
+    steps:
+      - id: publish-releases
+        run: |
+          gh release edit "redis-$REDIS_VERSION-$SUFFIX" --draft=false
+        env:
+          REDIS_VERSION: ${{ matrix.redis }}
+          SUFFIX: ${{ needs.list.outputs.suffix }}
+          GH_TOKEN: ${{ github.token }}
