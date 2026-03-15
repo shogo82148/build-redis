@@ -44,7 +44,7 @@ jobs:
         run: |
           gh release create "redis-$REDIS_VERSION-$SUFFIX" --draft --title "Redis $REDIS_VERSION" --notes "Redis $REDIS_VERSION built by shogo82148/build-redis"
         env:
-          REDIS_VERSIONS: ${{ matrix.redis }}
+          REDIS_VERSION: ${{ matrix.redis }}
           SUFFIX: ${{ needs.list.outputs.suffix }}
           GH_TOKEN: ${{ github.token }}
 

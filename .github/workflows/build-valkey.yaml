@@ -44,7 +44,7 @@ jobs:
         run: |
           gh release create "valkey-$VALKEY_VERSION-$SUFFIX" --draft --title "Valkey $VALKEY_VERSION" --notes "Valkey $VALKEY_VERSION built by shogo82148/build-valkey"
         env:
-          VALKEY_VERSIONS: ${{ matrix.valkey }}
+          VALKEY_VERSION: ${{ matrix.valkey }}
           SUFFIX: ${{ needs.list.outputs.suffix }}
           GH_TOKEN: ${{ github.token }}
 
