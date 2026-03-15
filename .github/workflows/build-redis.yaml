@@ -37,6 +37,9 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJson(needs.list.outputs.matrix-releases) }}
     steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: "false"
       - id: create-releases
         run: |
           gh release create "redis-$REDIS_VERSION-$SUFFIX" --draft --title "Redis $REDIS_VERSION" --notes "Redis $REDIS_VERSION built by shogo82148/build-redis"
@@ -95,6 +98,9 @@ jobs:
       matrix: ${{ fromJson(needs.list.outputs.matrix-releases) }}
     timeout-minutes: 5
     steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: "false"
       - id: publish-releases
         run: |
           gh release edit "redis-$REDIS_VERSION-$SUFFIX" --draft=false
