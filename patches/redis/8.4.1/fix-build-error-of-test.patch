@@ -10,3 +10,4 @@ index f14123478..f016cc96d 100644
 +	$(CC) -o $@ $^ $(SHOBJ_LDFLAGS) $(LDFLAGS) $(LIBS)
  
  .PHONY: clean
+ 

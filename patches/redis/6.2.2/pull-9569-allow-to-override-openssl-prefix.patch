@@ -49,3 +49,4 @@ index cf3e8c031..1001f5b39 100644
 +
  # Include paths to dependencies
  FINAL_CFLAGS+= -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -I../deps/hdr_histogram
+ 
