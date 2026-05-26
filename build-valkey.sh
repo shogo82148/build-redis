@@ -98,6 +98,7 @@ echo "::group::build valkey"
 
     mkdir -p "$PREFIX"
     make -C deps V=1
+    make PREFIX="$PREFIX" BUILD_TLS=yes OPENSSL_PREFIX="$PREFIX" V=1
     make install PREFIX="$PREFIX" BUILD_TLS=yes OPENSSL_PREFIX="$PREFIX" V=1
 )
 echo "::endgroup::"
