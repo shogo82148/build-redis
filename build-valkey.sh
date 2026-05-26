@@ -97,8 +97,8 @@ echo "::group::build valkey"
     fi
 
     mkdir -p "$PREFIX"
-    make -C deps "-j$JOBS" MALLOC=libc V=1
-    make install "-j$JOBS" PREFIX="$PREFIX" BUILD_TLS=yes OPENSSL_PREFIX="$PREFIX" MALLOC=libc V=1
+    make -C deps "-j$JOBS" V=1
+    make install "-j$JOBS" PREFIX="$PREFIX" BUILD_TLS=yes OPENSSL_PREFIX="$PREFIX" V=1
 )
 echo "::endgroup::"
 
