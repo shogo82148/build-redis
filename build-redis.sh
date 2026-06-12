@@ -6,7 +6,7 @@ set -uex
 ROOT=$(cd "$(dirname "$0")" && pwd)
 REDIS_VERSION=$1
 OPENSSL_VERSION1_1_1=1_1_1w
-OPENSSL_VERSION3=3.6.1
+OPENSSL_VERSION3=3.6.3
 : "${RUNNER_TEMP:=$ROOT/.work}"
 : "${RUNNER_TOOL_CACHE:=$RUNNER_TEMP/dist}"
 
