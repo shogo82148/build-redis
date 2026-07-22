@@ -25,12 +25,11 @@ PREFIX=$RUNNER_TOOL_CACHE/valkey/$VALKEY_VERSION/$VALKEY_ARCH
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 case "$OS" in
     darwin)
-        LDFLAGS=-Wl,-rpath,'@executable_path/../lib'
+        LDFLAGS=-Wl,-rpath,"$PREFIX/lib"
         JOBS=$(sysctl -n hw.logicalcpu_max 2>/dev/null)
     ;;
     linux)
-        # shellcheck disable=SC2016
-        LDFLAGS=-Wl,-rpath,'\$$ORIGIN/../lib'
+        LDFLAGS=-Wl,-rpath,"$PREFIX/lib"
         JOBS=$(nproc 2>/dev/null)
     ;;
 esac
