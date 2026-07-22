@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   list:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - id: set-matrix
         run: |
@@ -33,7 +33,7 @@ jobs:
 
   create-releases:
     needs: list
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.list.outputs.matrix-releases) }}
@@ -93,7 +93,7 @@ jobs:
 
   publish-releases:
     needs: [list, build]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.list.outputs.matrix-releases) }}
