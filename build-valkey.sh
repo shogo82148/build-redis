@@ -86,6 +86,11 @@ echo "::endgroup::"
 # build
 echo "::group::build valkey"
 (
+    if [[ $OS = linux ]]; then
+        # rewriting rpath doesn't work on Linux: https://github.com/shogo82148/build-redis/issues/3
+        export LDFLAGS=""
+    fi
+
     cd "$RUNNER_TEMP"
     tar xzf valkey.tar.gz
     cd "valkey-$VALKEY_VERSION"
@@ -100,6 +105,15 @@ echo "::group::build valkey"
     make -C deps V=1
     make PREFIX="$PREFIX" BUILD_TLS=yes OPENSSL_PREFIX="$PREFIX" V=1
     make install PREFIX="$PREFIX" BUILD_TLS=yes OPENSSL_PREFIX="$PREFIX" V=1
+
+    if [[ $OS = linux ]]; then
+        # shellcheck disable=SC2016 # we intentionally want to use $ORIGIN in the rpath, so we escape it.
+        patchelf --set-rpath '$ORIGIN/../lib' "$PREFIX/bin/valkey-server"
+        # shellcheck disable=SC2016 # we intentionally want to use $ORIGIN in the rpath, so we escape it.
+        patchelf --set-rpath '$ORIGIN/../lib' "$PREFIX/bin/valkey-cli"
+        # shellcheck disable=SC2016 # we intentionally want to use $ORIGIN in the rpath, so we escape it.
+        patchelf --set-rpath '$ORIGIN/../lib' "$PREFIX/bin/valkey-benchmark"
+    fi
 )
 echo "::endgroup::"
 
