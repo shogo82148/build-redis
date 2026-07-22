@@ -11,6 +11,7 @@ permissions:
   contents: write
   id-token: write
   attestations: write
+  artifact-metadata: write
 
 jobs:
   list:
