@@ -22,7 +22,7 @@ jobs:
           {
             echo "suffix=$(date +%Y%m%d%H%M%S)"
             echo "matrix-releases=$(printenv REDIS_VERSIONS | jq -c '{redis: .}')"
-            echo "matrix=$(printenv REDIS_VERSIONS | jq -c '{redis: . , os: ["ubuntu-22.04", "ubuntu-22.04-arm", "macos-14", "macos-15-intel"]}')"
+            echo "matrix=$(printenv REDIS_VERSIONS | jq -c '{redis: . , os: ["ubuntu-22.04", "ubuntu-22.04-arm", "macos-15", "macos-15-intel"]}')"
           } >> "$GITHUB_OUTPUT"
         env:
           REDIS_VERSIONS: ${{ github.event.inputs.redis-versions }}

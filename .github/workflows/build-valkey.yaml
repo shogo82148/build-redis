@@ -22,7 +22,7 @@ jobs:
           {
             echo "suffix=$(date +%Y%m%d%H%M%S)"
             echo "matrix-releases=$(printenv VALKEY_VERSIONS | jq -c '{valkey: .}')"
-            echo "matrix=$(printenv VALKEY_VERSIONS | jq -c '{valkey: . , os: ["ubuntu-22.04", "ubuntu-22.04-arm", "macos-14", "macos-15-intel"]}')"
+            echo "matrix=$(printenv VALKEY_VERSIONS | jq -c '{valkey: . , os: ["ubuntu-22.04", "ubuntu-22.04-arm", "macos-15", "macos-15-intel"]}')"
           } >> "$GITHUB_OUTPUT"
         env:
           VALKEY_VERSIONS: ${{ github.event.inputs.valkey-versions }}
